@@ -10,7 +10,9 @@ three additions:
   `tuxedo_keyboard` driver's `charging_profile` sysfs attribute. Hidden on
   machines without it. While a cap is active the EC reports a fake 100%, so
   the panel estimates the real level from pack voltage instead and shows
-  "Capped at 80%" / "Charging to 90%" accordingly.
+  "Capped at 80%", "Charging to 90%" or "Holding, cap 100%" (EC says Full
+  but is below the cap: it only resumes charging after dropping a few
+  percent, unplugging briefly usually kicks it).
 
 ![preview](preview.png)
 

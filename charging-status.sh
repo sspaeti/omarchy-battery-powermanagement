@@ -12,9 +12,11 @@ if [[ -r $prof/charging_profile ]]; then
   # The uniwill EC reports the capped range as 100%, so capacity/charge_now
   # lie whenever a cap is set. Pack voltage does not. Anchors measured on the
   # InfinityBook Pro Gen10 (4 cells): 16.87 V = truly full, 16.49 V = 80% cap.
-  # Below that the Li-ion curve is approximated piecewise. Only used while the
-  # EC claims Full or Charging under a cap; discharge is left to the EC.
-  case $profile in balanced) cap=90 ;; stationary) cap=80 ;; *) cap= ;; esac
+  # Below that the Li-ion curve is approximated piecewise. Used whenever the
+  # EC claims Full or Charging (it also claims Full at 80% right after the cap
+  # is lifted, until its hysteresis lets charging resume); discharge is left
+  # to the EC.
+  case $profile in balanced) cap=90 ;; stationary) cap=80 ;; *) cap=100 ;; esac
   status=${BATTERY_STATUS_OVERRIDE:-$(cat "$bat/status" 2>/dev/null)}
   uv=${BATTERY_VOLTAGE_OVERRIDE:-$(cat "$bat/voltage_now" 2>/dev/null)}
   if [[ -n $cap && -n $uv && ( $status == Full || $status == Charging ) ]]; then

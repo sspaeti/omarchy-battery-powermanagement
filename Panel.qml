@@ -140,8 +140,10 @@ Panel {
 
   readonly property string heroStatusText: {
     if (displayCap > 0 && chargeCap > 0) {
-      if (displayCap >= chargeCap) return "Capped at " + chargeCap + "%"
-      if (fullyCharged) return "Below cap " + chargeCap + "%"
+      if (displayCap >= chargeCap) return chargeCap >= 100 ? "Fully charged" : "Capped at " + chargeCap + "%"
+      // EC says Full but the pack is below the cap: it holds until its
+      // hysteresis lets charging resume (unplug briefly to kick it).
+      if (fullyCharged) return "Holding, cap " + chargeCap + "%"
       return "Charging to " + chargeCap + "%"
     }
     if (fullyCharged) return "Fully charged"

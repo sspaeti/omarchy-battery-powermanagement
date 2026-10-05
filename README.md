@@ -58,10 +58,19 @@ This is independent of the power profile (power-saver / balanced / performance).
 
 ### Verifying the cap
 
-The EC reports the capped range as 100%, so `capacity` lies. Pack voltage does
-not: ~16.87 V (4.22 V/cell) is truly full, ~16.49 V is the 80% cap. The
-estimate in `charging-status.sh` interpolates between those measured anchors
-(InfinityBook Pro AMD Gen10, 4 cells); other models may need the table tuned.
+The EC reports the capped range as 100%, so `capacity` lies, and it reports
+`Full` even while 0.7 A flows in. `charging-status.sh` therefore:
+
+1. at rest (current 0) reads pack voltage: ~16.87 V (4.22 V/cell) is truly
+   full, ~16.49 V is the 80% cap, interpolated between measured anchors
+   (InfinityBook Pro AMD Gen10, 4 cells; other models may need the table tuned);
+2. while current flows integrates `current_now` over time from the last
+   resting estimate (coulomb counting, state in `$XDG_RUNTIME_DIR`);
+3. on discharge defers to the EC and drops the anchor.
+
+The hero line says "Capped at 80%", "Charging to 100%" or "Holding, cap 90%".
+Raising the cap does not start charging by itself: the EC resumes only after
+the pack drops a few percent, or after an unplug/replug of the charger.
 
 ```bash
 cat /sys/class/power_supply/BAT0/voltage_now
@@ -69,6 +78,9 @@ cat /sys/class/power_supply/BAT0/voltage_now
 ```
 
 ## Development
+
+`make test` runs the Model.js unit tests and the charging-status.sh scenario
+test (the latter needs the TUXEDO sysfs attribute present).
 
 This repo is the installed plugin. Edit in place; Omarchy hot-reloads most
 files, `Panel.qml` needs `make reload`. `make test` runs the Model.js tests.

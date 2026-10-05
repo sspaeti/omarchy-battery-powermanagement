@@ -10,6 +10,7 @@ reload:
 ## Run the Model.js unit tests
 test:
 	node test/model.test.js
+	./test/status.test.sh
 
 ## Install root helper + sudoers + boot service (TUXEDO only, needs sudo)
 install-system:

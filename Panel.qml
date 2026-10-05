@@ -25,6 +25,9 @@ Panel {
   // level from pack voltage. Overrides the displayed percentage and bar fill.
   readonly property int displayCap: Number(chargeInfo.display || 0)
   readonly property int chargeCap: Number(chargeInfo.cap || 0)
+  // "rest" or "charging" from charging-status.sh; the EC's own status says
+  // Full even while current flows, so this is the reliable signal.
+  readonly property string chargeFlow: chargeInfo.flow || ""
   readonly property string chargeStatusScript: Qt.resolvedUrl("charging-status.sh").toString().replace(/^file:\/\//, "")
   property var profiles: []
   property string activeProfile: ""
@@ -141,10 +144,10 @@ Panel {
   readonly property string heroStatusText: {
     if (displayCap > 0 && chargeCap > 0) {
       if (displayCap >= chargeCap) return chargeCap >= 100 ? "Fully charged" : "Capped at " + chargeCap + "%"
-      // EC says Full but the pack is below the cap: it holds until its
-      // hysteresis lets charging resume (unplug briefly to kick it).
-      if (fullyCharged) return "Holding, cap " + chargeCap + "%"
-      return "Charging to " + chargeCap + "%"
+      if (chargeFlow === "charging") return "Charging to " + chargeCap + "%"
+      // At rest below the cap: the EC holds until its hysteresis lets
+      // charging resume (unplug briefly to kick it).
+      return "Holding, cap " + chargeCap + "%"
     }
     if (fullyCharged) return "Fully charged"
     if (rotatingPhrases) return activePhrases[phraseIndex % activePhrases.length]

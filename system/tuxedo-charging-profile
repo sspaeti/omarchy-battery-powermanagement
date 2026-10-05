@@ -1,0 +1,22 @@
+#!/bin/bash
+# Set the TUXEDO (uniwill EC) battery charging profile.
+# high_capacity = 100%, balanced = ~90%, stationary = ~80%.
+# Called via sudo from the omarchy bar (io.github.sspaeti.battery) and at boot by
+# tuxedo-charging-profile.service.
+#
+# The EC resets to high_capacity on every boot, and the sysfs attribute only
+# appears once tuxedo_keyboard has probed (a second or two after
+# systemd-modules-load), so at boot we wait for it instead of bailing.
+set -euo pipefail
+f=/sys/devices/platform/tuxedo_keyboard/charging_profile/charging_profile
+case "${1:-}" in
+  high_capacity|balanced|stationary) ;;
+  *) echo "usage: $0 {high_capacity|balanced|stationary}" >&2; exit 2 ;;
+esac
+for _ in $(seq 60); do
+  [[ -w $f ]] && break
+  sleep 0.5
+done
+[[ -w $f ]] || { echo "$f not writable after 30s (tuxedo_keyboard loaded?)" >&2; exit 1; }
+echo "$1" > "$f"
+echo "charging_profile=$(<"$f")"

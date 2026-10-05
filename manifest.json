@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.sspaeti.battery",
+  "name": "Battery",
+  "version": "1.0.0",
+  "author": "Simon Späti",
+  "description": "Battery, power profile, TUXEDO charge limit, health and cycles",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Battery",
+    "description": "Battery, power profile, TUXEDO charge limit, health and cycles",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  },
+  "license": "MIT"
+}

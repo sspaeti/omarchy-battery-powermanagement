@@ -1,0 +1,1 @@
+sspaeti ALL=(root) NOPASSWD: /usr/local/bin/tuxedo-charging-profile high_capacity, /usr/local/bin/tuxedo-charging-profile balanced, /usr/local/bin/tuxedo-charging-profile stationary

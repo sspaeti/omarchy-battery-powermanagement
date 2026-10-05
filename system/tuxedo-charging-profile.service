@@ -1,0 +1,13 @@
+[Unit]
+Description=TUXEDO battery charging profile (stationary = ~80% cap)
+# No ConditionPathExists here: the sysfs attribute shows up ~1-2s after
+# tuxedo_keyboard loads, which is after systemd evaluates conditions. The
+# helper polls for it instead.
+After=systemd-modules-load.service systemd-udevd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/tuxedo-charging-profile stationary
+
+[Install]
+WantedBy=multi-user.target

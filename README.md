@@ -1,0 +1,73 @@
+# Battery (io.github.sspaeti.battery)
+
+Omarchy bar battery panel, forked from the stock `omarchy.power` widget, with
+three additions:
+
+- **Charge cycles** read from `raw_cycle_count` when `cycle_count` is 0
+  (uniwill/TUXEDO ECs never fill `cycle_count`).
+- **Health** row: `charge_full / charge_full_design`.
+- **CHARGE LIMIT** buttons (100% / 90% / 80%) for TUXEDO laptops, backed by the
+  `tuxedo_keyboard` driver's `charging_profile` sysfs attribute. Hidden on
+  machines without it. When the cap is active and the EC reports "Full", the
+  panel shows the cap value instead of the EC's fake 100%.
+
+![preview](preview.png)
+
+Everything else (power profile picker, phrases, keyboard navigation) is the
+stock Omarchy panel, so this stays drop-in compatible.
+
+## Install
+
+```bash
+git clone git@github.com:sspaeti/omarchy-battery-powermanagement.git \
+  ~/.config/omarchy/plugins/io.github.sspaeti.battery
+```
+
+Then in `~/.config/omarchy/shell.json` replace `"id": "omarchy.power"` with
+`"id": "io.github.sspaeti.battery"` (or `omarchy bar move`). Restart the shell:
+
+```bash
+omarchy restart shell
+```
+
+To go back to stock, swap the id back. `omarchy.power` is never touched.
+
+### TUXEDO charge limit (optional, needs sudo once)
+
+The EC register is root-only and resets to 100% on every boot, so the buttons
+need a root helper, a sudoers rule limited to exactly three invocations, and a
+boot service that re-applies the cap:
+
+```bash
+make install-system          # == sudo ./install-system.sh [user] [profile]
+```
+
+Installs:
+
+| File | Purpose |
+|---|---|
+| `/usr/local/bin/tuxedo-charging-profile` | writes `charging_profile`; waits up to 30 s for the attr at boot |
+| `/etc/sudoers.d/tuxedo-charging` | NOPASSWD for the three valid profile args only |
+| `/etc/systemd/system/tuxedo-charging-profile.service` | oneshot at boot, default `stationary` |
+
+Profiles: `high_capacity` = 100%, `balanced` ≈ 90%, `stationary` ≈ 80%.
+This is independent of the power profile (power-saver / balanced / performance).
+
+### Verifying the cap
+
+The EC reports the capped range as 100%, so `capacity` lies. Pack voltage does
+not: ~16.87 V (4.22 V/cell) is truly full, ~16.49 V is the 80% cap.
+
+```bash
+cat /sys/class/power_supply/BAT0/voltage_now
+./charging-status.sh     # what the panel reads
+```
+
+## Development
+
+This repo is the installed plugin. Edit in place; Omarchy hot-reloads most
+files, `Panel.qml` needs `make reload`. `make test` runs the Model.js tests.
+
+## License
+
+MIT

@@ -8,8 +8,9 @@ three additions:
 - **Health** row: `charge_full / charge_full_design`.
 - **CHARGE LIMIT** buttons (100% / 90% / 80%) for TUXEDO laptops, backed by the
   `tuxedo_keyboard` driver's `charging_profile` sysfs attribute. Hidden on
-  machines without it. When the cap is active and the EC reports "Full", the
-  panel shows the cap value instead of the EC's fake 100%.
+  machines without it. While a cap is active the EC reports a fake 100%, so
+  the panel estimates the real level from pack voltage instead and shows
+  "Capped at 80%" / "Charging to 90%" accordingly.
 
 ![preview](preview.png)
 
@@ -56,7 +57,9 @@ This is independent of the power profile (power-saver / balanced / performance).
 ### Verifying the cap
 
 The EC reports the capped range as 100%, so `capacity` lies. Pack voltage does
-not: ~16.87 V (4.22 V/cell) is truly full, ~16.49 V is the 80% cap.
+not: ~16.87 V (4.22 V/cell) is truly full, ~16.49 V is the 80% cap. The
+estimate in `charging-status.sh` interpolates between those measured anchors
+(InfinityBook Pro AMD Gen10, 4 cells); other models may need the table tuned.
 
 ```bash
 cat /sys/class/power_supply/BAT0/voltage_now

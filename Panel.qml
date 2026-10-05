@@ -20,9 +20,11 @@ Panel {
   property var chargeInfo: ({})
   readonly property var chargeProfiles: Model.chargeProfiles(chargeInfo.profiles)
   readonly property string activeChargeProfile: chargeInfo.profile || ""
-  // >0 when the EC reports "Full" under a charge cap; the real level is the
-  // cap, not 100 (see charging-status.sh). Overrides the displayed percentage.
+  // >0 while a TUXEDO charge cap is set and the EC reports Full/Charging: the
+  // EC's percentage is fake then, so charging-status.sh estimates the real
+  // level from pack voltage. Overrides the displayed percentage and bar fill.
   readonly property int displayCap: Number(chargeInfo.display || 0)
+  readonly property int chargeCap: Number(chargeInfo.cap || 0)
   readonly property string chargeStatusScript: Qt.resolvedUrl("charging-status.sh").toString().replace(/^file:\/\//, "")
   property var profiles: []
   property string activeProfile: ""
@@ -137,7 +139,11 @@ Panel {
   readonly property bool rotatingPhrases: activePhrases.length > 0
 
   readonly property string heroStatusText: {
-    if (fullyCharged && displayCap > 0) return "Capped at " + displayCap + "%"
+    if (displayCap > 0 && chargeCap > 0) {
+      if (displayCap >= chargeCap) return "Capped at " + chargeCap + "%"
+      if (fullyCharged) return "Below cap " + chargeCap + "%"
+      return "Charging to " + chargeCap + "%"
+    }
     if (fullyCharged) return "Fully charged"
     if (rotatingPhrases) return activePhrases[phraseIndex % activePhrases.length]
     return modeLabel()

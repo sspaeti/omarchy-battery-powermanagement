@@ -9,15 +9,29 @@ if [[ -r $prof/charging_profile ]]; then
   printf 'profile\t%s\n' "$profile"
   printf 'profiles\t%s\n' "$(<"$prof/charging_profiles_available")"
 
-  # The uniwill EC reports the capped range as 100%, so "Full" under a cap is
-  # a lie. Pack voltage tells the truth: ~16.87 V (4.22 V/cell) when truly
-  # full, ~16.49 V under the 80% cap. When the EC says Full but voltage is
-  # below the true-full band, show the cap value instead of 100.
+  # The uniwill EC reports the capped range as 100%, so capacity/charge_now
+  # lie whenever a cap is set. Pack voltage does not. Anchors measured on the
+  # InfinityBook Pro Gen10 (4 cells): 16.87 V = truly full, 16.49 V = 80% cap.
+  # Below that the Li-ion curve is approximated piecewise. Only used while the
+  # EC claims Full or Charging under a cap; discharge is left to the EC.
   case $profile in balanced) cap=90 ;; stationary) cap=80 ;; *) cap= ;; esac
-  if [[ -n $cap && -r $bat/status && -r $bat/voltage_now ]] \
-     && [[ $(<"$bat/status") == Full ]] \
-     && (( $(<"$bat/voltage_now") < 16700000 )); then
-    printf 'display\t%s\n' "$cap"
+  status=${BATTERY_STATUS_OVERRIDE:-$(cat "$bat/status" 2>/dev/null)}
+  uv=${BATTERY_VOLTAGE_OVERRIDE:-$(cat "$bat/voltage_now" 2>/dev/null)}
+  if [[ -n $cap && -n $uv && ( $status == Full || $status == Charging ) ]]; then
+    est=$(awk -v uv="$uv" -v cap="$cap" 'BEGIN {
+      v = uv / 1000000
+      n = split("16.87:100 16.49:80 16.10:60 15.60:40 15.10:20 14.60:5", a, " ")
+      for (i = 1; i <= n; i++) { split(a[i], p, ":"); V[i] = p[1]; S[i] = p[2] }
+      if (v >= V[1]) soc = 100
+      else if (v <= V[n]) soc = S[n]
+      else for (i = 1; i < n; i++) if (v <= V[i] && v > V[i+1]) {
+        soc = S[i+1] + (v - V[i+1]) / (V[i] - V[i+1]) * (S[i] - S[i+1]); break }
+      if (soc > cap) soc = cap
+      if (cap - soc < 3) soc = cap           # within noise of the cap: show the cap
+      printf "%d", soc + 0.5
+    }')
+    printf 'cap\t%s\n' "$cap"
+    printf 'display\t%s\n' "$est"
   fi
 fi
 
